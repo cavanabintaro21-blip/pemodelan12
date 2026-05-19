@@ -24,20 +24,35 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 
+# Final standardized mapping: numeric -> stance label
+LABEL_MAPPING = {
+    0: "oppose",
+    1: "neutral",
+    2: "support",
+}
+
+
 def _normalize_label(label: str, id2label: Optional[dict] = None) -> str:
-    """Normalize transformer output labels to Positive/Negative/Neutral."""
-    label = str(label).upper()
+    """Normalize transformer or analyzer output to standardized stance labels.
+
+    Returns one of: 'support', 'oppose', 'neutral' (all lowercase).
+    """
+    label_orig = str(label)
+    label = label_orig.upper()
     if label.startswith("LABEL_") and id2label is not None:
-        numeric = int(label.replace("LABEL_", ""))
-        label = id2label.get(numeric, label)
+        try:
+            numeric = int(label.replace("LABEL_", ""))
+            return LABEL_MAPPING.get(numeric, str(label_orig).lower())
+        except Exception:
+            pass
 
     if any(token in label for token in ["NEG", "AGAINST", "CONTRA", "TIDAK", "NO"]):
-        return "Negative"
+        return "oppose"
     if any(token in label for token in ["NEU", "NET", "NEUTRAL"]):
-        return "Neutral"
+        return "neutral"
     if any(token in label for token in ["POS", "FAVOR", "FOR", "SUPPORT", "SETUJU"]):
-        return "Positive"
-    return "Positive"
+        return "support"
+    return str(label_orig).lower()
 
 
 def run_stance_analysis_improved(
@@ -102,6 +117,8 @@ def run_stance_analysis_improved(
         post_context = post_texts.get(post_id, "")
         if len(comment_text.strip()) > 0:
             stance, confidence, reasoning = analyzer.analyze(comment_text, post_context)
+            # Normalize analyzer outputs to standardized labels
+            stance = _normalize_label(stance)
             comments_df.at[idx, 'stance'] = stance
             comments_df.at[idx, 'stance_confidence'] = confidence
     

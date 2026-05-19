@@ -737,20 +737,20 @@ def render_vertical_report(posts_df, comments_df, topic_model, months_per_period
                 komentar = str(row.get(comment_col, '') or '').strip()
                 stance_val = str(row.get(stance_col, '') or '').strip() if stance_col else ''
 
-                # Format dan map stance value ke badge yang konsisten
+                # Format dan map stance value ke badge yang konsisten (support/oppose/neutral)
                 stance_key = stance_val.lower().strip()
-                if stance_key in ['pro', 'positive', 'pos', 'positif']:
+                if stance_key in ['pro', 'positive', 'pos', 'positif', 'support', 'supporting']:
                     bg_color = '#28a745'
                     text_color = '#ffffff'
-                    stance_label = 'Pro'
-                elif stance_key in ['kontra', 'negative', 'neg', 'negatif', 'contra']:
+                    stance_label = 'support'
+                elif stance_key in ['kontra', 'negative', 'neg', 'negatif', 'contra', 'oppose', 'against']:
                     bg_color = '#dc3545'
                     text_color = '#ffffff'
-                    stance_label = 'Kontra'
-                elif stance_key in ['neutral', 'netral']:
+                    stance_label = 'oppose'
+                elif stance_key in ['neutral', 'netral', 'none']:
                     bg_color = '#ffc107'
                     text_color = '#212529'
-                    stance_label = 'Netral'
+                    stance_label = 'neutral'
                 else:
                     bg_color = '#ffc107'
                     text_color = '#212529'
@@ -777,22 +777,23 @@ def render_vertical_report(posts_df, comments_df, topic_model, months_per_period
 
 
 def _normalize_sentiment_label(label):
-    label = str(label).upper()
+    label_orig = str(label)
+    label = label_orig.upper()
     if label.startswith("LABEL_"):
         mapping = {
-            'LABEL_0': 'NEGATIVE',
-            'LABEL_1': 'NEUTRAL',
-            'LABEL_2': 'POSITIVE'
+            'LABEL_0': 'oppose',
+            'LABEL_1': 'neutral',
+            'LABEL_2': 'support'
         }
-        return mapping.get(label, label)
+        return mapping.get(label, str(label_orig).lower())
 
     if any(token in label for token in ['NEG', 'AGAINST', 'CONTRA', 'TIDAK', 'NO']):
-        return 'NEGATIVE'
+        return 'oppose'
     if any(token in label for token in ['NEU', 'NET', 'NEUTRAL']):
-        return 'NEUTRAL'
+        return 'neutral'
     if any(token in label for token in ['POS', 'FAVOR', 'FOR', 'SUPPORT', 'SETUJU']):
-        return 'POSITIVE'
-    return label
+        return 'support'
+    return str(label_orig).lower()
 
 
 def cached_stance_analysis(_sentiment_model, _comments_list, _batch_size=20):
@@ -812,12 +813,14 @@ def cached_stance_analysis(_sentiment_model, _comments_list, _batch_size=20):
         for sentiment in batch_sentiments:
             label = _normalize_sentiment_label(sentiment.get('label', 'NEUTRAL'))
             confidence = float(sentiment.get('score', 0.0))
-            
+
             # Apply confidence threshold - if below 0.7, classify as neutral to reduce false positives
-            if confidence < 0.7 and label != 'NEUTRAL':
-                label = 'NEUTRAL'
-                logging.debug(f"Low confidence {confidence:.2f} for {sentiment.get('label', '')}, reclassified as NEUTRAL")
-            
+            if confidence < 0.7 and label != 'neutral':
+                label = 'neutral'
+                logging.debug(f"Low confidence {confidence:.2f} for {sentiment.get('label', '')}, reclassified as neutral")
+
+            # Ensure label is standardized lowercase
+            label = str(label).lower()
             sentiments.append(label)
             confidences.append(confidence)
     
