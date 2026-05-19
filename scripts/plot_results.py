@@ -20,7 +20,7 @@ def plot_distribution(pred_path, out_dir):
     df = pd.read_csv(pred_path)
     counts = df['stance'].value_counts()
     fig, ax = plt.subplots(figsize=(6,4))
-    counts.reindex(['Positive','Negative','Neutral']).plot(kind='bar', color=['#2ca02c','#d62728','#7f7f7f'], ax=ax)
+    counts.reindex(['oppose', 'neutral', 'support']).plot(kind='bar', color=['#d62728', '#7f7f7f', '#2ca02c'], ax=ax)
     ax.set_title('Stance Distribution (Improved Analyzer)')
     ax.set_ylabel('Count')
     ax.set_xlabel('Stance')

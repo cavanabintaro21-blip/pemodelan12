@@ -98,7 +98,7 @@ def main() -> None:
     parser.add_argument(
         "--labels",
         nargs="*",
-        default=["POSITIVE", "NEGATIVE", "NEUTRAL"],
+        default=["support", "oppose", "neutral"],
         help="Optional label order for evaluation",
     )
     args = parser.parse_args()

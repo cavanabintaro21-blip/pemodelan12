@@ -99,15 +99,13 @@ class ImprovedStanceAnalyzer:
             
         Returns:
             (stance, confidence, reasoning) tuple
-            stance: 'Positive', 'Negative', or 'Neutral'
-            confidence: 0.0 to 1.0
-            reasoning: Brief explanation
+                stance: 'support', 'oppose', or 'neutral'
+                confidence: 0.0 to 1.0
+                reasoning: Brief explanation
         """
         
         if not text or not isinstance(text, str):
-            return 'Neutral', 0.0, "Empty or invalid text"
-        
-        # Step 1: Preprocess with signal preservation
+            return 'neutral', 0.0, "Empty or invalid text"
         signals = preprocess_with_signals(text)
         clean_text = signals.clean_text
         
@@ -181,16 +179,16 @@ class ImprovedStanceAnalyzer:
         if self.use_sarcasm_detection and detect_sarcasm_pattern(original_text):
             words = find_sentiment_words(clean_text, 'negative')
             if words['negative']:  # Has negative words + sarcasm = very negative
-                return 'Negative', 0.90, "Sarcasm pattern detected + negative words"
+                return 'oppose', 0.90, "Sarcasm pattern detected + negative words"
             else:
                 # Pure sarcasm without negative words = likely criticism
-                return 'Negative', 0.80, "Passive-aggressive sarcasm detected"
+                return 'oppose', 0.80, "Passive-aggressive sarcasm detected"
         
         # 2. Check for rhetorical questions (usually negative/critical)
         if detect_rhetorical_question(original_text):
             words = find_sentiment_words(clean_text, 'negative')
             if words['negative']:
-                return 'Negative', 0.88, "Rhetorical question + negative sentiment"
+                return 'oppose', 0.88, "Rhetorical question + negative sentiment"
         
         # 3. Check for political corruption accusations (very strong negative)
         corruption_count = sum(
@@ -198,7 +196,7 @@ class ImprovedStanceAnalyzer:
             if keyword in clean_text
         )
         if corruption_count >= 2:  # Multiple corruption keywords
-            return 'Negative', 0.92, f"Multiple corruption indicators ({corruption_count})"
+            return 'oppose', 0.92, f"Multiple corruption indicators ({corruption_count})"
         
         return None
     
@@ -318,18 +316,18 @@ class ImprovedStanceAnalyzer:
         
         # Both scores below threshold → neutral
         if neg_score < self.confidence_threshold and pos_score < self.confidence_threshold:
-            return 'Neutral', max(max(neg_score, pos_score), 0.3)
+            return 'neutral', max(max(neg_score, pos_score), 0.3)
         
         # Negative wins
         if neg_score > pos_score:
-            return 'Negative', min(neg_score, 1.0)
+            return 'oppose', min(neg_score, 1.0)
         
         # Positive wins
         if pos_score > neg_score:
-            return 'Positive', min(pos_score, 1.0)
+            return 'support', min(pos_score, 1.0)
         
         # Tie → neutral
-        return 'Neutral', max(neg_score, pos_score)
+        return 'neutral', max(neg_score, pos_score)
     
     def _apply_post_context(
         self,
@@ -364,7 +362,7 @@ class ImprovedStanceAnalyzer:
         
         # If post is positive but comment has contradiction → likely negative
         if post_is_positive and has_contradiction:
-            return 'Negative', 0.75
+            return 'oppose', 0.75
         
         return stance, confidence
     
@@ -404,22 +402,22 @@ if __name__ == "__main__":
     analyzer = ImprovedStanceAnalyzer(debug=False)
     
     test_cases = [
-        # Should be NEGATIVE
-        ("@Menlu_RI Menteri paling gak becus.", "NEGATIVE"),
-        ("@Menlu_RI Mentri tolol", "NEGATIVE"),
-        ("GOBLOGnya presiden @prabowo gk ada obatnya!!!", "NEGATIVE"),
-        ("@P3gEl Emang mulut pejabat kita kayak kurang makan sekolahan", "NEGATIVE"),
-        ("Gmana MALING bs tangkap maling??", "NEGATIVE"),
+        # Should be oppose
+        ("@Menlu_RI Menteri paling gak becus.", "oppose"),
+        ("@Menlu_RI Mentri tolol", "oppose"),
+        ("GOBLOGnya presiden @prabowo gk ada obatnya!!!", "oppose"),
+        ("@P3gEl Emang mulut pejabat kita kayak kurang makan sekolahan", "oppose"),
+        ("Gmana MALING bs tangkap maling??", "oppose"),
         
-        # Should be POSITIVE
-        ("@KotaNusantara Program renovasi rumah bikin hati lega", "POSITIVE"),
-        ("Langkah Presiden Prabowo ini keren banget!", "POSITIVE"),
-        ("@kusuma4a Bangga kami atas kinerja TNI", "POSITIVE"),
-        ("Terima kasih bakti TNI", "POSITIVE"),
+        # Should be support
+        ("@KotaNusantara Program renovasi rumah bikin hati lega", "support"),
+        ("Langkah Presiden Prabowo ini keren banget!", "support"),
+        ("@kusuma4a Bangga kami atas kinerja TNI", "support"),
+        ("Terima kasih bakti TNI", "support"),
         
-        # Should be NEUTRAL
-        ("Presiden membuat keputusan setelah konsultasi", "NEUTRAL"),
-        ("Implementasi dimulai bulan depan", "NEUTRAL"),
+        # Should be neutral
+        ("Presiden membuat keputusan setelah konsultasi", "neutral"),
+        ("Implementasi dimulai bulan depan", "neutral"),
     ]
     
     correct = 0

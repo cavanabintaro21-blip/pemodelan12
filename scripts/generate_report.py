@@ -36,10 +36,24 @@ def main():
         print('No matches between prediction and ground truth; aborting report generation')
         return
 
-    # Use expected vs stance
-    y_true = merged['expected'].astype(str)
-    y_pred = merged['stance'].astype(str)
-    labels = ['Positive', 'Negative', 'Neutral']
+    label_map = {
+        'positive': 'support',
+        'pos': 'support',
+        'pro': 'support',
+        'support': 'support',
+        'negative': 'oppose',
+        'neg': 'oppose',
+        'contra': 'oppose',
+        'against': 'oppose',
+        'oppose': 'oppose',
+        'neutral': 'neutral',
+        'netral': 'neutral',
+        'none': 'neutral'
+    }
+    merged['expected'] = merged['expected'].astype(str).str.lower().map(lambda x: label_map.get(x, x))
+    y_true = merged['expected']
+    y_pred = merged['stance'].astype(str).str.lower()
+    labels = ['oppose', 'neutral', 'support']
 
     precision, recall, f1, support = precision_recall_fscore_support(y_true, y_pred, labels=labels, zero_division=0)
 

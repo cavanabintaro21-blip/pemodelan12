@@ -40,7 +40,22 @@ def compute_basic_metrics(pred_df, gt_path, out_path):
         print("No matching examples found between predictions and ground truth. Skipping metrics.")
         return None
 
-    labels = ['Positive', 'Negative', 'Neutral']
+    label_map = {
+        'positive': 'support',
+        'pos': 'support',
+        'pro': 'support',
+        'support': 'support',
+        'negative': 'oppose',
+        'neg': 'oppose',
+        'contra': 'oppose',
+        'against': 'oppose',
+        'oppose': 'oppose',
+        'neutral': 'neutral',
+        'netral': 'neutral',
+        'none': 'neutral'
+    }
+    merged['expected'] = merged['expected'].astype(str).str.lower().map(lambda x: label_map.get(x, x))
+    labels = ['oppose', 'neutral', 'support']
     results = []
     for label in labels:
         tp = ((merged['expected'] == label) & (merged['stance'] == label)).sum()

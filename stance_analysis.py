@@ -3,7 +3,7 @@ Stance Analysis Module
 ======================
 
 Provides two approaches for stance classification:
-1. Original: Transformer-based sentiment analysis (backward compatible)
+1. Original: Transformer-based stance analysis (legacy)
 2. Improved: Lexicon + signal-based (better for Indonesian, RECOMMENDED)
 
 Updated: 2026-05-17
@@ -107,7 +107,7 @@ def run_stance_analysis_improved(
         return comments_df
     
     # Add columns
-    comments_df['stance'] = 'Neutral'
+    comments_df['stance'] = 'neutral'
     comments_df['stance_confidence'] = 0.0
     
     # Analyze each comment
@@ -171,7 +171,7 @@ def run_stance_analysis(
     logger.info("Using ORIGINAL transformer-based stance analyzer...")
     
     comments_df = comments_df.copy()
-    comments_df["stance"] = "Neutral"
+    comments_df["stance"] = "neutral"
     comments_df["stance_confidence"] = 0.0
 
     model = pipeline("sentiment-analysis", model=model_name)
@@ -193,8 +193,8 @@ def run_stance_analysis(
         label = prediction.get("label", "Neutral")
         score = float(prediction.get("score", 0.0))
         stance = _normalize_label(label, id2label)
-        if score < confidence_threshold and stance != "Neutral":
-            stance = "Neutral"
+        if score < confidence_threshold and stance != "neutral":
+            stance = "neutral"
         comments_df.at[idx, "stance"] = stance
         comments_df.at[idx, "stance_confidence"] = score
 
