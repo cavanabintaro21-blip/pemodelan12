@@ -68,11 +68,11 @@ def run_stance_analysis_improved(
     RECOMMENDED: Better for Indonesian political discourse with slang/sarcasm detection.
     
     Args:
-        comments_df: DataFrame with 'full_text_comments' column
+        comments_df: DataFrame with 'full_text_comment' or 'full_text_comments' column
         confidence_threshold: Minimum confidence for non-neutral classification
         use_signals: Apply intensity signal boosts (CAPS, punctuation)
         use_sarcasm_detection: Detect sarcasm patterns
-        
+
     Returns:
         DataFrame with 'stance' and 'stance_confidence' columns added
     """
@@ -95,13 +95,19 @@ def run_stance_analysis_improved(
     )
     
     # Determine comment column name
-    comment_col = 'full_text_comments' if 'full_text_comments' in comments_df.columns else 'clean_comments'
+    comment_col = (
+        'full_text_comment' if 'full_text_comment' in comments_df.columns else
+        'full_text_comments' if 'full_text_comments' in comments_df.columns else
+        'clean_comments'
+    )
 
     # Build post context mapping if posts_df provided
     post_texts = {}
-    if posts_df is not None and 'post_id' in posts_df.columns and 'clean_text' in posts_df.columns:
-        post_texts = posts_df.set_index('post_id')['clean_text'].to_dict()
-    
+    if posts_df is not None and 'post_id' in posts_df.columns:
+        if 'full_text' in posts_df.columns:
+            post_texts = posts_df.set_index('post_id')['full_text'].to_dict()
+        elif 'clean_text' in posts_df.columns:
+            post_texts = posts_df.set_index('post_id')['clean_text'].to_dict()
     if comment_col not in comments_df.columns:
         logger.warning(f"Comment column not found. Available: {comments_df.columns.tolist()}")
         return comments_df
@@ -177,16 +183,24 @@ def run_stance_analysis(
     model = pipeline("sentiment-analysis", model=model_name)
     id2label = getattr(model.model.config, "id2label", None)
 
-    post_texts = posts_df.set_index("post_id")["clean_text"].to_dict()
+    post_texts = {}
+    if 'full_text' in posts_df.columns:
+        post_texts = posts_df.set_index('post_id')['full_text'].to_dict()
+    elif 'clean_text' in posts_df.columns:
+        post_texts = posts_df.set_index('post_id')['clean_text'].to_dict()
     inputs = []
     
-    comment_col = 'full_text_comments' if 'full_text_comments' in comments_df.columns else 'clean_comments'
+    comment_col = (
+        'full_text_comment' if 'full_text_comment' in comments_df.columns else
+        'full_text_comments' if 'full_text_comments' in comments_df.columns else
+        'clean_comments'
+    )
     
     for record in comments_df.itertuples(index=False):
         post_id = getattr(record, 'post_id', '')
         post_text = post_texts.get(str(post_id), "")
         comment_text = str(getattr(record, comment_col, "") or "")
-        inputs.append(f"Post: {post_text} \nComment: {comment_text}")
+        inputs.append(f"[POSTINGAN] {post_text} [KOMENTAR] {comment_text}")
 
     results = model(inputs, batch_size=batch_size)
     for idx, prediction in enumerate(results):
