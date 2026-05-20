@@ -37,22 +37,29 @@ def _normalize_label(label: str, id2label: Optional[dict] = None) -> str:
 
     Returns one of: 'support', 'oppose', 'neutral' (all lowercase).
     """
-    label_orig = str(label)
+    label_orig = str(label).lower()
     label = label_orig.upper()
+    
+    # Exact match first
+    if label_orig in ["oppose", "support", "neutral"]:
+        return label_orig
+    
     if label.startswith("LABEL_") and id2label is not None:
         try:
             numeric = int(label.replace("LABEL_", ""))
-            return LABEL_MAPPING.get(numeric, str(label_orig).lower())
+            return LABEL_MAPPING.get(numeric, label_orig)
         except Exception:
             pass
 
-    if any(token in label for token in ["NEG", "AGAINST", "CONTRA", "TIDAK", "NO"]):
+    # Substring matching with longer tokens first to avoid false positives
+    if any(token in label for token in ["OPPOSE", "AGAINST", "CONTRA", "TIDAK", "NEG", "NO"]):
         return "oppose"
-    if any(token in label for token in ["NEU", "NET", "NEUTRAL"]):
+    if any(token in label for token in ["NEUTRAL", "NEU", "NET"]):
         return "neutral"
-    if any(token in label for token in ["POS", "FAVOR", "FOR", "SUPPORT", "SETUJU"]):
+    if any(token in label for token in ["SUPPORT", "SETUJU", "FAVOR", "FOR"]):
         return "support"
-    return str(label_orig).lower()
+    
+    return label_orig
 
 
 def run_stance_analysis_improved(

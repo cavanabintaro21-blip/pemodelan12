@@ -1,0 +1,6 @@
+post_id,full_text_comments,stance,stance_confidence
+0,Komentar positif tentang AI.,neutral,0.3
+1,Komentar negatif terhadap ML.,oppose,0.75
+2,Komentar netral.,neutral,0.3
+3,Sangat setuju dengan ini.,support,1.0
+4,Tidak setuju sama sekali.,oppose,1.0

@@ -299,7 +299,8 @@ class ImprovedStanceAnalyzer:
         """
         Handle negation (tidak, gak, etc).
         
-        E.g., "tidak bagus" should flip/reduce positive score
+        E.g., "tidak setuju" → flip positive to negative
+        E.g., "tidak bagus" → negate positive sentiment
         
         Args:
             text: Cleaned text
@@ -316,11 +317,14 @@ class ImprovedStanceAnalyzer:
         if not has_negation:
             return neg_score, pos_score
         
-        # If text has negation + positive words → reduce positive score
-        if pos_score > 0.0:
+        # If text has negation + positive words → FLIP to negative
+        if pos_score > 0.0 and neg_score == 0.0:
+            neg_score = pos_score * 0.8  # Transfer positive score to negative
+            pos_score = 0.0
+        elif pos_score > 0.0:
             pos_score *= 0.5  # Reduce positive by half
         
-        # If text has negation + negative words → increase negative score
+        # If text has negation + negative words → amplify
         if neg_score > 0.0:
             neg_score *= 1.3  # Amplify negative by 30%
         
