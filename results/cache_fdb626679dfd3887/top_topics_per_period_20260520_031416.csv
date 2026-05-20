@@ -1,0 +1,16 @@
+Period,Topic_ID,Topic_Name,Count,Percentage
+1 (2020-06-26 to 2020-09-26),0,0_kerja_indonesia_bukan_jokowi,2,100.0
+2 (2020-09-26 to 2020-12-26),0,0_kerja_indonesia_bukan_jokowi,2,100.0
+3 (2025-06-26 to 2025-09-26),6,6_pangan_ketahanan pangan_cita presiden_petani,1,100.0
+4 (2025-09-26 to 2025-12-26),0,0_kerja_indonesia_bukan_jokowi,2802,61.2
+4 (2025-09-26 to 2025-12-26),1,1_rekonstruksi pascabencana_rekonstruksi_listrik_bangun rekonstruksi,431,9.4
+4 (2025-09-26 to 2025-12-26),2,2_bencana sumatera_korban bencana_memulihkan warga_sumatera utara,132,2.9
+4 (2025-09-26 to 2025-12-26),3,3_hutan_lingkungan_pengawasan_banjir aceh,107,2.3
+4 (2025-09-26 to 2025-12-26),4,4_prabowo pulihkan_pasca bencana_pulihkan infrastruktur_darurat prabowo,91,2.0
+4 (2025-09-26 to 2025-12-26),5,5_memulihkan warga_memulihkan_warga terdampak_korban bencana,77,1.7
+4 (2025-09-26 to 2025-12-26),7,7_transportasi_prabowo pulihkan_pulihkan infrastruktur_pasca bencana,63,1.4
+4 (2025-09-26 to 2025-12-26),8,8_asing_belum_bencana nasional_bantuan asing,62,1.4
+4 (2025-09-26 to 2025-12-26),6,6_pangan_ketahanan pangan_cita presiden_petani,61,1.3
+5 (2025-12-26 to 2026-03-26),0,0_kerja_indonesia_bukan_jokowi,17,85.0
+5 (2025-12-26 to 2026-03-26),5,5_memulihkan warga_memulihkan_warga terdampak_korban bencana,2,10.0
+5 (2025-12-26 to 2026-03-26),6,6_pangan_ketahanan pangan_cita presiden_petani,1,5.0

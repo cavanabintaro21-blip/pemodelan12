@@ -1,0 +1,127 @@
+[
+  {
+    "period_start": "2020-06-26T02:51:38",
+    "period_end": "2020-09-26T02:51:38",
+    "total_posts": 2,
+    "topics": [
+      {
+        "Topic": 0,
+        "Name": "0_kerja_indonesia_bukan_jokowi",
+        "Count": 2,
+        "Percentage": 100.0
+      }
+    ]
+  },
+  {
+    "period_start": "2020-09-26T02:51:38",
+    "period_end": "2020-12-26T02:51:38",
+    "total_posts": 2,
+    "topics": [
+      {
+        "Topic": 0,
+        "Name": "0_kerja_indonesia_bukan_jokowi",
+        "Count": 2,
+        "Percentage": 100.0
+      }
+    ]
+  },
+  {
+    "period_start": "2025-06-26T02:51:38",
+    "period_end": "2025-09-26T02:51:38",
+    "total_posts": 1,
+    "topics": [
+      {
+        "Topic": 6,
+        "Name": "6_pangan_ketahanan pangan_cita presiden_petani",
+        "Count": 1,
+        "Percentage": 100.0
+      }
+    ]
+  },
+  {
+    "period_start": "2025-09-26T02:51:38",
+    "period_end": "2025-12-26T02:51:38",
+    "total_posts": 4577,
+    "topics": [
+      {
+        "Topic": 0,
+        "Name": "0_kerja_indonesia_bukan_jokowi",
+        "Count": 2802,
+        "Percentage": 61.219139174131534
+      },
+      {
+        "Topic": 1,
+        "Name": "1_rekonstruksi pascabencana_rekonstruksi_listrik_bangun rekonstruksi",
+        "Count": 431,
+        "Percentage": 9.416648459689753
+      },
+      {
+        "Topic": 2,
+        "Name": "2_bencana sumatera_korban bencana_memulihkan warga_sumatera utara",
+        "Count": 132,
+        "Percentage": 2.8839851431068384
+      },
+      {
+        "Topic": 3,
+        "Name": "3_hutan_lingkungan_pengawasan_banjir aceh",
+        "Count": 107,
+        "Percentage": 2.3377758357002403
+      },
+      {
+        "Topic": 4,
+        "Name": "4_prabowo pulihkan_pasca bencana_pulihkan infrastruktur_darurat prabowo",
+        "Count": 91,
+        "Percentage": 1.9882018789600175
+      },
+      {
+        "Topic": 5,
+        "Name": "5_memulihkan warga_memulihkan_warga terdampak_korban bencana",
+        "Count": 77,
+        "Percentage": 1.6823246668123224
+      },
+      {
+        "Topic": 7,
+        "Name": "7_transportasi_prabowo pulihkan_pulihkan infrastruktur_pasca bencana",
+        "Count": 63,
+        "Percentage": 1.3764474546646275
+      },
+      {
+        "Topic": 8,
+        "Name": "8_asing_belum_bencana nasional_bantuan asing",
+        "Count": 62,
+        "Percentage": 1.3545990823683636
+      },
+      {
+        "Topic": 6,
+        "Name": "6_pangan_ketahanan pangan_cita presiden_petani",
+        "Count": 61,
+        "Percentage": 1.3327507100720997
+      }
+    ]
+  },
+  {
+    "period_start": "2025-12-26T02:51:38",
+    "period_end": "2026-03-26T02:51:38",
+    "total_posts": 20,
+    "topics": [
+      {
+        "Topic": 0,
+        "Name": "0_kerja_indonesia_bukan_jokowi",
+        "Count": 17,
+        "Percentage": 85.0
+      },
+      {
+        "Topic": 5,
+        "Name": "5_memulihkan warga_memulihkan_warga terdampak_korban bencana",
+        "Count": 2,
+        "Percentage": 10.0
+      },
+      {
+        "Topic": 6,
+        "Name": "6_pangan_ketahanan pangan_cita presiden_petani",
+        "Count": 1,
+        "Percentage": 5.0
+      }
+    ]
+  }
+]
