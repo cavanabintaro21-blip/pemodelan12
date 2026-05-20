@@ -175,7 +175,11 @@ class ImprovedStanceAnalyzer:
             stance, confidence = self._apply_post_context(
                 stance, confidence, text, post_context
             )
-        
+
+        # Step 9: Enforce minimum confidence threshold for stance labels
+        if confidence < 0.55:
+            stance = 'neutral'
+
         # Build reasoning
         reasoning = self._build_reasoning(
             stance, confidence, neg_score, pos_score, neg_words, pos_words
