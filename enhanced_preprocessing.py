@@ -129,12 +129,11 @@ def preprocess_with_signals(text: str, preserve_abbrev: bool = True) -> Preproce
     
     clean = text
     
-    # Remove URLs, @mentions, #hashtags (but remember they existed)
+    # Remove URLs only; keep @mentions and #hashtags because they carry political targets and stance signals
     clean = re.sub(r'http\S+|www\.\S+', '', clean)
-    clean = re.sub(r'@\w+', '', clean)
-    clean = re.sub(r'#\w+', '', clean)
     
-    # Preserve abbreviations before converting to lowercase
+    # Preserve abbreviations without aggressively lowercasing the entire comment.
+    # Capitalization is kept because it can signal emphasis in political stance.
     if preserve_abbrev:
         clean = re.sub(r'\bgk\b', 'gak', clean, flags=re.IGNORECASE)
         clean = re.sub(r'\bdgn\b', 'dengan', clean, flags=re.IGNORECASE)
@@ -147,9 +146,6 @@ def preprocess_with_signals(text: str, preserve_abbrev: bool = True) -> Preproce
         clean = re.sub(r'\byd\b', 'yang dimaksud', clean, flags=re.IGNORECASE)
         clean = re.sub(r'\butk\b', 'untuk', clean, flags=re.IGNORECASE)
     
-    # Convert to lowercase
-    clean = clean.lower()
-    
     # Reduce multiple punctuation to single (but signal already captured)
     clean = re.sub(r'!{2,}', '!', clean)
     clean = re.sub(r'\?{2,}', '?', clean)
@@ -161,8 +157,8 @@ def preprocess_with_signals(text: str, preserve_abbrev: bool = True) -> Preproce
     # Remove extra whitespace
     clean = re.sub(r'\s+', ' ', clean).strip()
     
-    # Remove leading/trailing punctuation
-    clean = re.sub(r'^[^\w]+|[^\w]+$', '', clean)
+    # Remove leading/trailing punctuation, but preserve mentions/hashtags
+    clean = re.sub(r'^[^@\w#]+|[^@\w#]+$', '', clean)
     
     signals.clean_text = clean
     return signals

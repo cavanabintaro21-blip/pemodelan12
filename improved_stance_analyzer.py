@@ -50,6 +50,34 @@ from enhanced_preprocessing import (
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+AGREEMENT_PATTERNS = [
+    'betul sekali',
+    'benar sekali',
+    'nah ini benar',
+    'akhirnya ada yang berani bicara',
+    'setuju',
+    'sangat setuju',
+    'setuju banget',
+    'iya',
+    'amin',
+    'mantap',
+    'ini benar',
+    'pas banget',
+    'tepat sekali',
+]
+
+DISAGREEMENT_PATTERNS = [
+    'tidak setuju',
+    'gak setuju',
+    'nggak setuju',
+    'malah',
+    'justru',
+    'bukan',
+    'jangan',
+    'tidak benar',
+    'salah',
+]
+
 
 class ImprovedStanceAnalyzer:
     """
@@ -116,22 +144,18 @@ class ImprovedStanceAnalyzer:
                        f"!={signals.has_multiple_exclamation}, "
                        f"?={signals.has_multiple_question}")
         
+        clean_text_lower = clean_text.lower()
+
         # Step 2: Check for special patterns first (high-confidence indicators)
-        special_result = self._check_special_patterns(text, clean_text)
+        special_result = self._check_special_patterns(text, clean_text_lower)
         if special_result is not None:
             return special_result
-        
+
         # Step 3: Score lexicon matches
-        neg_score, neg_words = self._score_lexicon_words(clean_text, 'negative')
-        pos_score, pos_words = self._score_lexicon_words(clean_text, 'positive')
-        
-        if self.debug:
-            logger.info(f"Neg score: {neg_score:.2f} ({len(neg_words)} words)")
-            logger.info(f"Pos score: {pos_score:.2f} ({len(pos_words)} words)")
-        
-        # Step 4: Apply intensity modifiers
-        neg_score = self._apply_intensity_modifiers(clean_text, neg_score)
-        pos_score = self._apply_intensity_modifiers(clean_text, pos_score)
+        neg_score, neg_words = self._score_lexicon_words(clean_text_lower, 'negative')
+        pos_score, pos_words = self._score_lexicon_words(clean_text_lower, 'positive')
+        neg_score = self._apply_intensity_modifiers(clean_text_lower, neg_score)
+        pos_score = self._apply_intensity_modifiers(clean_text_lower, pos_score)
         
         # Step 5: Apply signal boosts
         if self.use_signals:
@@ -141,7 +165,7 @@ class ImprovedStanceAnalyzer:
             pos_score = pos_score_boosted
         
         # Step 6: Apply negation handling
-        neg_score, pos_score = self._handle_negation(clean_text, neg_score, pos_score)
+        neg_score, pos_score = self._handle_negation(clean_text_lower, neg_score, pos_score)
         
         # Step 7: Determine stance
         stance, confidence = self._determine_stance(neg_score, pos_score)
@@ -363,9 +387,39 @@ class ImprovedStanceAnalyzer:
         # If post is positive but comment has contradiction → likely negative
         if post_is_positive and has_contradiction:
             return 'oppose', 0.75
-        
+
+        post_stance = self._infer_post_stance(post_text)
+        if post_stance != 'neutral':
+            comment_lower = comment_text.lower()
+            if any(pattern in comment_lower for pattern in DISAGREEMENT_PATTERNS):
+                opposite = 'oppose' if post_stance == 'support' else 'support'
+                return opposite, max(confidence, 0.72)
+            if any(pattern in comment_lower for pattern in AGREEMENT_PATTERNS):
+                return post_stance, max(confidence, 0.72)
+            if stance == 'neutral' and len(comment_lower.strip()) <= 30:
+                if any(pattern in comment_lower for pattern in AGREEMENT_PATTERNS):
+                    return post_stance, max(confidence, 0.72)
+
         return stance, confidence
     
+    def _infer_post_stance(self, post_text: str) -> str:
+        """
+        Infer parent post stance from post text using lexicon scores.
+        """
+        if not post_text or not isinstance(post_text, str):
+            return 'neutral'
+
+        post_lower = post_text.lower()
+        post_sentiments = find_sentiment_words(post_lower, 'both')
+        post_pos_score = sum(score for _, score in post_sentiments['positive'])
+        post_neg_score = sum(abs(score) for _, score in post_sentiments['negative'])
+
+        if post_pos_score >= post_neg_score and post_pos_score >= 0.5:
+            return 'support'
+        if post_neg_score > post_pos_score and post_neg_score >= 0.5:
+            return 'oppose'
+        return 'neutral'
+
     def _build_reasoning(
         self,
         stance: str,

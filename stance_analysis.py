@@ -138,7 +138,7 @@ def run_stance_analysis(
     model_name: str = "cardiffnlp/twitter-roberta-base-sentiment-latest",
     batch_size: int = 32,
     confidence_threshold: float = 0.45,
-    use_improved: bool = False,
+    use_improved: bool = True,
 ) -> pd.DataFrame:
     """
     Perform stance analysis on comments using the parent post context.
@@ -157,6 +157,12 @@ def run_stance_analysis(
     
     if comments_df.empty:
         return comments_df.copy()
+    if not use_improved:
+        logger.warning(
+            "Legacy sentiment-based transformer path is deprecated for political stance detection; "
+            "switching to improved target-dependent stance analyzer."
+        )
+        use_improved = True
     
     # ========================================================================
     # IMPROVED ANALYZER (RECOMMENDED)
