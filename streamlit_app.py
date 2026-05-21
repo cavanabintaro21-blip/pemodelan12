@@ -202,11 +202,34 @@ def save_analysis_cache(cache_dir, posts_df, comments_df, topic_model, topic_val
 
 
 def cached_fit_transform(_topic_model, _docs):
-    """Wrapper for BERTopic fit_transform"""
+    """Wrapper for BERTopic fit_transform with data validation"""
     logging.info(f"Starting fit_transform on {len(_docs)} documents")
-    topics, probs = _topic_model.fit_transform(_docs)
-    logging.info(f"Completed fit_transform: {len(set(topics))} topics found")
-    return topics, probs
+    
+    # Validate input data
+    if not _docs or len(_docs) == 0:
+        raise ValueError("No documents provided for topic modeling")
+    
+    # Filter out empty strings
+    valid_docs = [doc for doc in _docs if isinstance(doc, str) and len(doc.strip()) > 0]
+    if len(valid_docs) == 0:
+        raise ValueError("All documents are empty after filtering")
+    
+    if len(valid_docs) < len(_docs):
+        logging.warning(f"Filtered out {len(_docs) - len(valid_docs)} empty documents. Using {len(valid_docs)} valid documents.")
+    
+    try:
+        topics, probs = _topic_model.fit_transform(valid_docs)
+        logging.info(f"Completed fit_transform: {len(set(topics))} topics found")
+        return topics, probs
+    except ValueError as e:
+        if "0 sample" in str(e):
+            logging.error(f"HDBSCAN received 0 samples. This may indicate dataset too small or all documents became outliers.")
+            raise ValueError(
+                f"Dataset terlalu kecil atau preprocessing menghilangkan semua vocabulary. "
+                f"Pastikan dataset memiliki cukup dokumen dengan kata-kata yang bermakna. "
+                f"Error: {str(e)}"
+            )
+        raise
 
 def cached_topics_over_time(_topic_model, _docs, _timestamps, _nr_bins=20):
     """Wrapper for BERTopic topics_over_time calculation"""
@@ -1679,6 +1702,17 @@ if uploaded_file:
         docs = posts_df['full_text_preprocessed'].astype(str).tolist()
         timestamps = posts_df['created_at'].tolist()
         
+        # Validate documents - filter out empty ones
+        valid_indices = [i for i, doc in enumerate(docs) if isinstance(doc, str) and len(doc.strip()) > 0]
+        if len(valid_indices) == 0:
+            st.error("❌ Semua dokumen kosong setelah preprocessing. Silakan periksa dataset Anda.")
+            st.stop()
+        elif len(valid_indices) < len(docs):
+            st.warning(f"⚠️ {len(docs) - len(valid_indices)} dokumen kosong setelah preprocessing, menggunakan {len(valid_indices)} dokumen valid.")
+            docs = [docs[i] for i in valid_indices]
+            timestamps = [timestamps[i] for i in valid_indices]
+            posts_df = posts_df.iloc[valid_indices].reset_index(drop=True)
+        
         st.success("✅ Preprocessing selesai! Analisis berjalan otomatis setelah preprocessing.")
         st.divider()
 
@@ -1756,18 +1790,46 @@ if uploaded_file:
                         lowercase=True,
                         token_pattern=r'(?u)\b\w\w+\b'
                     )
+                
+                # Adaptive UMAP and HDBSCAN parameters
+                # UMAP: n_neighbors cannot be larger than dataset size - 1
+                n_neighbors_umap = min(15, max(3, num_docs - 1))
+                
+                # HDBSCAN: min_cluster_size should be adaptive
+                if num_docs < 5:
+                    hdbscan_min_cluster_size = 2
+                    min_topic_size_bertopic = 1
+                elif num_docs < 10:
+                    hdbscan_min_cluster_size = 2
+                    min_topic_size_bertopic = 2
+                elif num_docs < 20:
+                    hdbscan_min_cluster_size = 3
+                    min_topic_size_bertopic = 3
+                elif num_docs < 50:
+                    hdbscan_min_cluster_size = 5
+                    min_topic_size_bertopic = 5
+                elif num_docs < 100:
+                    hdbscan_min_cluster_size = 10
+                    min_topic_size_bertopic = 10
+                else:
+                    hdbscan_min_cluster_size = 20
+                    min_topic_size_bertopic = 20
+                
+                logging.info(f"Adaptive clustering: n_neighbors={n_neighbors_umap}, min_cluster_size={hdbscan_min_cluster_size}, min_topic_size={min_topic_size_bertopic}")
+                
                 umap_model = UMAP(
-                    n_neighbors=15,
-                    n_components=5,
+                    n_neighbors=n_neighbors_umap,
+                    n_components=min(5, num_docs // 2 + 1) if num_docs > 1 else 1,
                     min_dist=0.0,
                     metric='cosine',
                     random_state=42
                 )
                 hdbscan_model = HDBSCAN(
-                    min_cluster_size=20,
+                    min_cluster_size=hdbscan_min_cluster_size,
                     metric='euclidean',
                     cluster_selection_method='eom',
-                    prediction_data=True
+                    prediction_data=True,
+                    allow_single_cluster=True
                 )
                 representation_model = MaximalMarginalRelevance(diversity=0.3)
                 topic_model = BERTopic(
@@ -1777,7 +1839,7 @@ if uploaded_file:
                     vectorizer_model=vectorizer_model,
                     representation_model=representation_model,
                     nr_topics="auto",
-                    min_topic_size=20,
+                    min_topic_size=min_topic_size_bertopic,
                     calculate_probabilities=True,
                 )
                 
