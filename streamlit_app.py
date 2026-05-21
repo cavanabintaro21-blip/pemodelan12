@@ -1868,7 +1868,6 @@ if uploaded_file:
                     nr_topics="auto" if not disable_topic_reduction else None,
                     min_topic_size=min_topic_size_bertopic,
                     calculate_probabilities=True,
-                    reduce_frequent_words=False,  # Prevent aggressive filtering
                 )
                 
                 # Store model in session state immediately
