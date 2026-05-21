@@ -1708,7 +1708,54 @@ if uploaded_file:
                 progress_bar.progress(0.25)
                 logging.info("Initializing BERTopic model")
 
-                vectorizer_model = CountVectorizer(ngram_range=(1, 2), min_df=2, max_df=0.9)
+                # Adaptive vectorizer parameters based on dataset size
+                num_docs = len(docs)
+                
+                # For very small datasets, use more lenient parameters
+                if num_docs < 5:
+                    min_df_val = 1
+                    # Use absolute count instead of percentage for small datasets
+                    max_df_val = num_docs  # Don't filter any documents
+                    stop_words_list = None  # Don't remove stop words for tiny datasets
+                    logging.info(f"Tiny dataset detected ({num_docs} docs): minimal filtering")
+                elif num_docs < 10:
+                    min_df_val = 1
+                    max_df_val = num_docs  # Accept all
+                    stop_words_list = None  # Preserve all vocabulary
+                elif num_docs < 50:
+                    min_df_val = 1
+                    max_df_val = max(int(num_docs * 0.95), num_docs - 1)  # Use absolute count
+                    stop_words_list = list(indonesia_stopwords) if indonesia_stopwords else None
+                elif num_docs < 100:
+                    min_df_val = 1
+                    max_df_val = max(int(num_docs * 0.9), num_docs - 2)  # Use absolute count
+                    stop_words_list = list(indonesia_stopwords) if indonesia_stopwords else None
+                else:
+                    min_df_val = 2
+                    max_df_val = int(num_docs * 0.9)  # Can use percentage for large datasets
+                    stop_words_list = list(indonesia_stopwords) if indonesia_stopwords else None
+                
+                logging.info(f"Using adaptive vectorizer: min_df={min_df_val}, max_df={max_df_val}, {num_docs} docs")
+                try:
+                    vectorizer_model = CountVectorizer(
+                        ngram_range=(1, 2), 
+                        min_df=min_df_val, 
+                        max_df=max_df_val,
+                        stop_words=stop_words_list,
+                        max_features=10000,
+                        lowercase=True,
+                        token_pattern=r'(?u)\b\w\w+\b'
+                    )
+                except Exception as e:
+                    logging.warning(f"Error creating vectorizer with params: {e}. Falling back to minimal config.")
+                    vectorizer_model = CountVectorizer(
+                        ngram_range=(1, 1),
+                        min_df=1,
+                        max_df=num_docs,
+                        stop_words=None,
+                        lowercase=True,
+                        token_pattern=r'(?u)\b\w\w+\b'
+                    )
                 umap_model = UMAP(
                     n_neighbors=15,
                     n_components=5,
