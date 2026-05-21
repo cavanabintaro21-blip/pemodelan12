@@ -222,12 +222,19 @@ def cached_fit_transform(_topic_model, _docs):
         logging.info(f"Completed fit_transform: {len(set(topics))} topics found")
         return topics, probs
     except ValueError as e:
-        if "0 sample" in str(e):
+        error_str = str(e)
+        if "0 sample" in error_str:
             logging.error(f"HDBSCAN received 0 samples. This may indicate dataset too small or all documents became outliers.")
             raise ValueError(
                 f"Dataset terlalu kecil atau preprocessing menghilangkan semua vocabulary. "
                 f"Pastikan dataset memiliki cukup dokumen dengan kata-kata yang bermakna. "
-                f"Error: {str(e)}"
+                f"Error: {error_str}"
+            )
+        elif "k must be less than" in error_str or "n_neighbors" in error_str:
+            logging.error(f"KNN/UMAP error with dataset of size {len(valid_docs)}: {error_str}")
+            raise ValueError(
+                f"Dataset terlalu kecil untuk UMAP KNN. Silakan gunakan dataset dengan minimal 5 dokumen. "
+                f"Dokumen saat ini: {len(valid_docs)}. Error: {error_str}"
             )
         raise
 
@@ -1793,7 +1800,27 @@ if uploaded_file:
                 
                 # Adaptive UMAP and HDBSCAN parameters
                 # UMAP: n_neighbors cannot be larger than dataset size - 1
-                n_neighbors_umap = min(15, max(3, num_docs - 1))
+                # For very small datasets, use much smaller n_neighbors
+                if num_docs < 5:
+                    n_neighbors_umap = 2
+                    n_components_umap = 1
+                    disable_topic_reduction = True
+                elif num_docs < 10:
+                    n_neighbors_umap = 2
+                    n_components_umap = 2
+                    disable_topic_reduction = True
+                elif num_docs < 20:
+                    n_neighbors_umap = 3
+                    n_components_umap = 3
+                    disable_topic_reduction = True
+                elif num_docs < 50:
+                    n_neighbors_umap = min(5, num_docs - 1)
+                    n_components_umap = min(4, num_docs // 2)
+                    disable_topic_reduction = True
+                else:
+                    n_neighbors_umap = min(15, max(5, num_docs - 1))
+                    n_components_umap = 5
+                    disable_topic_reduction = False
                 
                 # HDBSCAN: min_cluster_size should be adaptive
                 if num_docs < 5:
@@ -1815,11 +1842,11 @@ if uploaded_file:
                     hdbscan_min_cluster_size = 20
                     min_topic_size_bertopic = 20
                 
-                logging.info(f"Adaptive clustering: n_neighbors={n_neighbors_umap}, min_cluster_size={hdbscan_min_cluster_size}, min_topic_size={min_topic_size_bertopic}")
+                logging.info(f"Adaptive clustering: n_neighbors={n_neighbors_umap}, n_components={n_components_umap}, min_cluster_size={hdbscan_min_cluster_size}, disable_reduction={disable_topic_reduction}")
                 
                 umap_model = UMAP(
                     n_neighbors=n_neighbors_umap,
-                    n_components=min(5, num_docs // 2 + 1) if num_docs > 1 else 1,
+                    n_components=n_components_umap,
                     min_dist=0.0,
                     metric='cosine',
                     random_state=42
@@ -1838,9 +1865,10 @@ if uploaded_file:
                     hdbscan_model=hdbscan_model,
                     vectorizer_model=vectorizer_model,
                     representation_model=representation_model,
-                    nr_topics="auto",
+                    nr_topics="auto" if not disable_topic_reduction else None,
                     min_topic_size=min_topic_size_bertopic,
                     calculate_probabilities=True,
+                    reduce_frequent_words=False,  # Prevent aggressive filtering
                 )
                 
                 # Store model in session state immediately
